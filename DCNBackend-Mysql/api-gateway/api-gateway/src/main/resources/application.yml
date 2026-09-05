@@ -1,0 +1,47 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: gateway
+
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            maxAge: 3600
+
+      routes:
+        - id: users-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/users/**
+
+        - id: items-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/items/**
+
+        - id: categories-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/categories/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

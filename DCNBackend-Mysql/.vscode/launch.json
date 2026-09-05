@@ -1,0 +1,47 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-UsersApplication<users-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.shopping_list.users.UsersApplication",
+            "projectName": "users-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=20753 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=users-service"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-ItemsApplication<items-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.shopping_list.items.ItemsApplication",
+            "projectName": "items-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=20747 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=items-service"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-CategoriesApplication<categories-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.shopping_list.categories.CategoriesApplication",
+            "projectName": "categories-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=13301 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=categories-service"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-GatewayApplication<gateway>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.shopping_list.gateway.GatewayApplication",
+            "projectName": "gateway",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
