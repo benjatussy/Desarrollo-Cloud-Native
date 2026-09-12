@@ -16,8 +16,11 @@
     "@agnostos/semantics": "file:../agnostos-ui/release/agnostos-semantics-1.0.0.tgz",
     "@agnostos/theme": "file:../agnostos-ui/release/agnostos-theme-1.0.0.tgz",
     "@agnostos/tokens": "file:../agnostos-ui/release/agnostos-tokens-1.0.0.tgz",
+    "@azure/msal-browser": "^5.21.0",
+    "@azure/msal-react": "^5.7.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

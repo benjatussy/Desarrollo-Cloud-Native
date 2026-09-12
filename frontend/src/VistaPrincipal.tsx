@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Badge,
     Button,
+    Card,
     Input,
     Modal,
     Select,
@@ -22,13 +23,19 @@ import {
     Plus,
     Pencil,
     Trash2,
-    Users as UsersIcon,
-    Package,
-    Tags,
+    LogOut,
+    LogIn,
     RefreshCw,
     Inbox,
     AlertTriangle,
 } from 'lucide-react';
+
+import {
+    useMsal,
+    AuthenticatedTemplate,
+    UnauthenticatedTemplate,
+} from '@azure/msal-react';
+import { loginRequest } from '../authConfig.js';
 
 // ---------------------------------------------------------------------------
 // Configuración y tipos
@@ -461,6 +468,17 @@ export default function VistaPrincipal() {
     const toast = useToast();
     const { confirm } = useConfirm();
 
+    const { instance, accounts } = useMsal();
+    const currentAccount = accounts[0];
+
+    const handleLogin = useCallback(() => {
+        instance.loginRedirect(loginRequest);
+    }, [instance]);
+
+    const handleLogout = useCallback(() => {
+        instance.logoutRedirect();
+    }, [instance]);
+
     const [users, setUsers] = useState<UserResponse[]>([]);
     const [categories, setCategories] = useState<CategoryResponse[]>([]);
     const [items, setItems] = useState<ItemResponse[]>([]);
@@ -834,57 +852,95 @@ export default function VistaPrincipal() {
     );
 
     return (
-        <Box padding="lg" style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <Flex direction="column" gap="lg">
-                <Box>
-                    <Text variant="h1" weight="bold">Panel de Administración</Text>
-                    <Text variant="body" color="muted">
-                        Usuarios, categorías e ítems, conectados vía el API Gateway en el puerto 8089.
-                    </Text>
+        <>
+            <UnauthenticatedTemplate>
+                <Flex
+                    direction="column"
+                    align="center"
+                    justify="center"
+                    gap="lg"
+                    style={{ minHeight: '100vh' }}
+                >
+                    <Card variant="default" shadow="md" style={{ maxWidth: 420, width: '100%', padding: 32 }}>
+                        <Flex direction="column" align="center" gap="md">
+                            <Text variant="h2" weight="bold">Panel de Administración</Text>
+                            <Text variant="body" color="muted" style={{ textAlign: 'center' }}>
+                                Debes iniciar sesión con tu cuenta de Microsoft Entra ID para acceder al contenido.
+                            </Text>
+                            <Button variant="primary" icon={LogIn} onClick={handleLogin}>
+                                Iniciar sesión
+                            </Button>
+                        </Flex>
+                    </Card>
+                </Flex>
+            </UnauthenticatedTemplate>
+
+            <AuthenticatedTemplate>
+                <Box padding="lg" style={{ maxWidth: 1200, margin: '0 auto' }}>
+                    <Flex direction="column" gap="lg">
+                        <Flex direction={{ xs: 'column', md: 'row' }} justify="between" align={{ md: 'center' }} gap="sm">
+                            <Box>
+                                <Text variant="h1" weight="bold">Panel de Administración</Text>
+                                <Text variant="body" color="muted">
+                                    Usuarios, categorías e ítems, conectados vía el API Gateway en el puerto 8089.
+                                </Text>
+                            </Box>
+                            <Flex align="center" gap="md">
+                                {currentAccount?.name && (
+                                    <Text variant="small" color="muted">
+                                        {currentAccount.name}
+                                    </Text>
+                                )}
+                                <Button variant="ghost" size="sm" icon={LogOut} onClick={handleLogout}>
+                                    Cerrar sesión
+                                </Button>
+                            </Flex>
+                        </Flex>
+
+                        <Tabs
+                            items={[
+                                { id: 'usuarios', label: 'Usuarios', content: usersPanel },
+                                { id: 'items', label: 'Ítems', content: itemsPanel },
+                                { id: 'categorias', label: 'Categorías', content: categoriesPanel },
+                            ]}
+                        />
+                    </Flex>
+
+                    <Modal
+                        open={modal.kind !== 'closed'}
+                        onClose={() => setModal({ kind: 'closed' })}
+                        ariaLabel={
+                            modal.kind === 'user' ? 'Formulario de usuario' : modal.kind === 'category' ? 'Formulario de categoría' : 'Formulario de ítem'
+                        }
+                    >
+                        {modal.kind === 'user' && (
+                            <UserForm
+                                initial={modal.data}
+                                submitting={submitting}
+                                onCancel={() => setModal({ kind: 'closed' })}
+                                onSubmit={handleUserSubmit}
+                            />
+                        )}
+                        {modal.kind === 'category' && (
+                            <CategoryForm
+                                initial={modal.data}
+                                submitting={submitting}
+                                onCancel={() => setModal({ kind: 'closed' })}
+                                onSubmit={handleCategorySubmit}
+                            />
+                        )}
+                        {modal.kind === 'item' && (
+                            <ItemForm
+                                initial={modal.data}
+                                users={users}
+                                submitting={submitting}
+                                onCancel={() => setModal({ kind: 'closed' })}
+                                onSubmit={handleItemSubmit}
+                            />
+                        )}
+                    </Modal>
                 </Box>
-
-                <Tabs
-                    items={[
-                        { id: 'usuarios', label: 'Usuarios', content: usersPanel },
-                        { id: 'items', label: 'Ítems', content: itemsPanel },
-                        { id: 'categorias', label: 'Categorías', content: categoriesPanel },
-                    ]}
-                />
-            </Flex>
-
-            <Modal
-                open={modal.kind !== 'closed'}
-                onClose={() => setModal({ kind: 'closed' })}
-                ariaLabel={
-                    modal.kind === 'user' ? 'Formulario de usuario' : modal.kind === 'category' ? 'Formulario de categoría' : 'Formulario de ítem'
-                }
-            >
-                {modal.kind === 'user' && (
-                    <UserForm
-                        initial={modal.data}
-                        submitting={submitting}
-                        onCancel={() => setModal({ kind: 'closed' })}
-                        onSubmit={handleUserSubmit}
-                    />
-                )}
-                {modal.kind === 'category' && (
-                    <CategoryForm
-                        initial={modal.data}
-                        submitting={submitting}
-                        onCancel={() => setModal({ kind: 'closed' })}
-                        onSubmit={handleCategorySubmit}
-                    />
-                )}
-                {modal.kind === 'item' && (
-                    <ItemForm
-                        initial={modal.data}
-                        users={users}
-                        submitting={submitting}
-                        onCancel={() => setModal({ kind: 'closed' })}
-                        onSubmit={handleItemSubmit}
-                    />
-                )}
-            </Modal>
-        </Box>
+            </AuthenticatedTemplate>
+        </>
     );
 }
