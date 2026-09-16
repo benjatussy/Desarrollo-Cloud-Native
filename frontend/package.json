@@ -10,12 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@agnostos/components": "file:../agnostos-ui/release/agnostos-components-1.0.0.tgz",
-    "@agnostos/core": "file:../agnostos-ui/release/agnostos-core-1.0.0.tgz",
-    "@agnostos/layout": "file:../agnostos-ui/release/agnostos-layout-1.0.0.tgz",
-    "@agnostos/semantics": "file:../agnostos-ui/release/agnostos-semantics-1.0.0.tgz",
-    "@agnostos/theme": "file:../agnostos-ui/release/agnostos-theme-1.0.0.tgz",
-    "@agnostos/tokens": "file:../agnostos-ui/release/agnostos-tokens-1.0.0.tgz",
+    "@agnostos/components": "file:./agnostos-components-1.0.0.tgz",
+    "@agnostos/core": "file:./agnostos-core-1.0.0.tgz",
+    "@agnostos/layout": "file:./agnostos-layout-1.0.0.tgz",
+    "@agnostos/semantics": "file:./agnostos-semantics-1.0.0.tgz",
+    "@agnostos/theme": "file:./agnostos-theme-1.0.0.tgz",
+    "@agnostos/tokens": "file:./agnostos-tokens-1.0.0.tgz",
     "@azure/msal-browser": "^5.21.0",
     "@azure/msal-react": "^5.7.0",
     "react": "^19.2.7",

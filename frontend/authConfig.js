@@ -9,9 +9,17 @@ export const msalConfig = {
         cacheLocation: 'sessionStorage',
     },
 };
+
+// Scopes solo para autenticar al usuario (login)
 export const loginRequest = {
     scopes: ['openid', 'profile'],
 };
+
+// Scopes para obtener el token que el API Gateway va a validar
+export const apiTokenRequest = {
+    scopes: [import.meta.env.VITE_API_SCOPE],
+};
+
 export const protectedResources = {
     api: {
         endpoint: import.meta.env.VITE_API_BASE_URL,

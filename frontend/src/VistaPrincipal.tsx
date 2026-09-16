@@ -35,7 +35,7 @@ import {
     AuthenticatedTemplate,
     UnauthenticatedTemplate,
 } from '@azure/msal-react';
-import { loginRequest } from '../authConfig.js';
+import { loginRequest, apiTokenRequest } from '../authConfig.js';
 
 // ---------------------------------------------------------------------------
 // Configuración y tipos
@@ -68,11 +68,33 @@ interface ItemResponse {
     createdAt: string;
 }
 
-async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
+async function getAccessToken(instance: any, account: any): Promise<string> {
+    try {
+        const result = await instance.acquireTokenSilent({
+            ...apiTokenRequest,
+            account,
+        });
+        return result.accessToken;
+    } catch {
+        // si el token silencioso falla (ej. expiró la sesión), reintenta con redirect
+        await instance.acquireTokenRedirect(apiTokenRequest);
+        throw new Error('Redirigiendo para renovar sesión...');
+    }
+}
+
+async function apiRequest<T>(
+    path: string,
+    token: string,
+    options?: RequestInit,
+): Promise<T> {
     let res: Response;
     try {
         res = await fetch(`${API_BASE}${path}`, {
-            headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+                ...(options?.headers || {}),
+            },
             ...options,
         });
     } catch {
@@ -95,34 +117,34 @@ async function apiRequest<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 const UsersApi = {
-    list: () => apiRequest<UserResponse[]>('/users'),
-    create: (data: { name: string; email: string; password: string }) =>
-        apiRequest<UserResponse>('/users', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: number, data: { name: string; email: string }) =>
-        apiRequest<UserResponse>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    setStatus: (id: number, active: boolean) =>
-        apiRequest<UserResponse>(`/users/${id}/status`, { method: 'PATCH', body: JSON.stringify({ active }) }),
-    remove: (id: number) => apiRequest<void>(`/users/${id}`, { method: 'DELETE' }),
+    list: (token: string) => apiRequest<UserResponse[]>('/users', token),
+    create: (token: string, data: { name: string; email: string; password: string }) =>
+        apiRequest<UserResponse>('/users', token, { method: 'POST', body: JSON.stringify(data) }),
+    update: (token: string, id: number, data: { name: string; email: string }) =>
+        apiRequest<UserResponse>(`/users/${id}`, token, { method: 'PUT', body: JSON.stringify(data) }),
+    setStatus: (token: string, id: number, active: boolean) =>
+        apiRequest<UserResponse>(`/users/${id}/status`, token, { method: 'PATCH', body: JSON.stringify({ active }) }),
+    remove: (token: string, id: number) => apiRequest<void>(`/users/${id}`, token, { method: 'DELETE' }),
 };
 
 const ItemsApi = {
-    list: () => apiRequest<ItemResponse[]>('/items'),
-    create: (data: { name: string; quantity: number; price: number; userId: number }) =>
-        apiRequest<ItemResponse>('/items', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: number, data: { name: string; quantity: number; price: number }) =>
-        apiRequest<ItemResponse>(`/items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    setPurchased: (id: number, purchased: boolean) =>
-        apiRequest<ItemResponse>(`/items/${id}/purchased`, { method: 'PATCH', body: JSON.stringify({ purchased }) }),
-    remove: (id: number) => apiRequest<void>(`/items/${id}`, { method: 'DELETE' }),
+    list: (token: string) => apiRequest<ItemResponse[]>('/items', token),
+    create: (token: string, data: { name: string; quantity: number; price: number; userId: number }) =>
+        apiRequest<ItemResponse>('/items', token, { method: 'POST', body: JSON.stringify(data) }),
+    update: (token: string, id: number, data: { name: string; quantity: number; price: number }) =>
+        apiRequest<ItemResponse>(`/items/${id}`, token, { method: 'PUT', body: JSON.stringify(data) }),
+    setPurchased: (token: string, id: number, purchased: boolean) =>
+        apiRequest<ItemResponse>(`/items/${id}/purchased`, token, { method: 'PATCH', body: JSON.stringify({ purchased }) }),
+    remove: (token: string, id: number) => apiRequest<void>(`/items/${id}`, token, { method: 'DELETE' }),
 };
 
 const CategoriesApi = {
-    list: () => apiRequest<CategoryResponse[]>('/categories'),
-    create: (data: { name: string; description?: string }) =>
-        apiRequest<CategoryResponse>('/categories', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: number, data: { name: string; description?: string }) =>
-        apiRequest<CategoryResponse>(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    remove: (id: number) => apiRequest<void>(`/categories/${id}`, { method: 'DELETE' }),
+    list: (token: string) => apiRequest<CategoryResponse[]>('/categories', token),
+    create: (token: string, data: { name: string; description?: string }) =>
+        apiRequest<CategoryResponse>('/categories', token, { method: 'POST', body: JSON.stringify(data) }),
+    update: (token: string, id: number, data: { name: string; description?: string }) =>
+        apiRequest<CategoryResponse>(`/categories/${id}`, token, { method: 'PUT', body: JSON.stringify(data) }),
+    remove: (token: string, id: number) => apiRequest<void>(`/categories/${id}`, token, { method: 'DELETE' }),
 };
 
 function formatDate(iso: string): string {
@@ -502,43 +524,48 @@ export default function VistaPrincipal() {
         setUsersLoading(true);
         setUsersError(null);
         try {
-            setUsers(await UsersApi.list());
+            const token = await getAccessToken(instance, accounts[0]);
+            setUsers(await UsersApi.list(token));
         } catch (e: any) {
             setUsersError(e.message);
         } finally {
             setUsersLoading(false);
         }
-    }, []);
+    }, [instance, accounts]);
 
     const loadCategories = useCallback(async () => {
         setCategoriesLoading(true);
         setCategoriesError(null);
         try {
-            setCategories(await CategoriesApi.list());
+            const token = await getAccessToken(instance, accounts[0]);
+            setCategories(await CategoriesApi.list(token));
         } catch (e: any) {
             setCategoriesError(e.message);
         } finally {
             setCategoriesLoading(false);
         }
-    }, []);
+    }, [instance, accounts]);
 
     const loadItems = useCallback(async () => {
         setItemsLoading(true);
         setItemsError(null);
         try {
-            setItems(await ItemsApi.list());
+            const token = await getAccessToken(instance, accounts[0]);
+            setItems(await ItemsApi.list(token));
         } catch (e: any) {
             setItemsError(e.message);
         } finally {
             setItemsLoading(false);
         }
-    }, []);
+    }, [instance, accounts]);
 
     useEffect(() => {
-        loadUsers();
-        loadCategories();
-        loadItems();
-    }, [loadUsers, loadCategories, loadItems]);
+        if (accounts.length > 0) {
+            loadUsers();
+            loadCategories();
+            loadItems();
+        }
+    }, [loadUsers, loadCategories, loadItems, accounts]);
 
     const usersById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
 
@@ -566,11 +593,12 @@ export default function VistaPrincipal() {
     const handleUserSubmit = async (values: { name: string; email: string; password?: string }) => {
         setSubmitting(true);
         try {
+            const token = await getAccessToken(instance, accounts[0]);
             if (modal.kind === 'user' && modal.data) {
-                await UsersApi.update(modal.data.id, { name: values.name, email: values.email });
+                await UsersApi.update(token, modal.data.id, { name: values.name, email: values.email });
                 toast.push({ title: 'Usuario actualizado', variant: 'success' });
             } else {
-                await UsersApi.create({ name: values.name, email: values.email, password: values.password! });
+                await UsersApi.create(token, { name: values.name, email: values.email, password: values.password! });
                 toast.push({ title: 'Usuario creado', variant: 'success' });
             }
             setModal({ kind: 'closed' });
@@ -584,7 +612,8 @@ export default function VistaPrincipal() {
 
     const handleToggleUserActive = async (user: UserResponse) => {
         try {
-            await UsersApi.setStatus(user.id, !user.active);
+            const token = await getAccessToken(instance, accounts[0]);
+            await UsersApi.setStatus(token, user.id, !user.active);
             toast.push({ title: user.active ? 'Usuario desactivado' : 'Usuario activado', variant: 'success' });
             await loadUsers();
         } catch (e: any) {
@@ -601,7 +630,8 @@ export default function VistaPrincipal() {
         });
         if (!ok) return;
         try {
-            await UsersApi.remove(user.id);
+            const token = await getAccessToken(instance, accounts[0]);
+            await UsersApi.remove(token, user.id);
             toast.push({ title: 'Usuario eliminado', variant: 'success' });
             await loadUsers();
         } catch (e: any) {
@@ -613,11 +643,12 @@ export default function VistaPrincipal() {
     const handleCategorySubmit = async (values: { name: string; description?: string }) => {
         setSubmitting(true);
         try {
+            const token = await getAccessToken(instance, accounts[0]);
             if (modal.kind === 'category' && modal.data) {
-                await CategoriesApi.update(modal.data.id, values);
+                await CategoriesApi.update(token, modal.data.id, values);
                 toast.push({ title: 'Categoría actualizada', variant: 'success' });
             } else {
-                await CategoriesApi.create(values);
+                await CategoriesApi.create(token, values);
                 toast.push({ title: 'Categoría creada', variant: 'success' });
             }
             setModal({ kind: 'closed' });
@@ -638,7 +669,8 @@ export default function VistaPrincipal() {
         });
         if (!ok) return;
         try {
-            await CategoriesApi.remove(category.id);
+            const token = await getAccessToken(instance, accounts[0]);
+            await CategoriesApi.remove(token, category.id);
             toast.push({ title: 'Categoría eliminada', variant: 'success' });
             await loadCategories();
         } catch (e: any) {
@@ -650,11 +682,12 @@ export default function VistaPrincipal() {
     const handleItemSubmit = async (values: { name: string; quantity: number; price: number; userId?: number }) => {
         setSubmitting(true);
         try {
+            const token = await getAccessToken(instance, accounts[0]);
             if (modal.kind === 'item' && modal.data) {
-                await ItemsApi.update(modal.data.id, { name: values.name, quantity: values.quantity, price: values.price });
+                await ItemsApi.update(token, modal.data.id, { name: values.name, quantity: values.quantity, price: values.price });
                 toast.push({ title: 'Ítem actualizado', variant: 'success' });
             } else {
-                await ItemsApi.create({ name: values.name, quantity: values.quantity, price: values.price, userId: values.userId! });
+                await ItemsApi.create(token, { name: values.name, quantity: values.quantity, price: values.price, userId: values.userId! });
                 toast.push({ title: 'Ítem creado', variant: 'success' });
             }
             setModal({ kind: 'closed' });
@@ -668,7 +701,8 @@ export default function VistaPrincipal() {
 
     const handleTogglePurchased = async (item: ItemResponse) => {
         try {
-            await ItemsApi.setPurchased(item.id, !item.purchased);
+            const token = await getAccessToken(instance, accounts[0]);
+            await ItemsApi.setPurchased(token, item.id, !item.purchased);
             await loadItems();
         } catch (e: any) {
             toast.push({ title: 'No se pudo actualizar el ítem', description: e.message, variant: 'danger' });
@@ -684,7 +718,8 @@ export default function VistaPrincipal() {
         });
         if (!ok) return;
         try {
-            await ItemsApi.remove(item.id);
+            const token = await getAccessToken(instance, accounts[0]);
+            await ItemsApi.remove(token, item.id);
             toast.push({ title: 'Ítem eliminado', variant: 'success' });
             await loadItems();
         } catch (e: any) {
