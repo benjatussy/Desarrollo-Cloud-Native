@@ -16,8 +16,17 @@ export const loginRequest = {
 };
 
 // Scopes para obtener el token que el API Gateway va a validar
+const API_URI = 'api://482ff19e-3fc5-43ec-8a5e-31ec71c950d3';
+
 export const apiTokenRequest = {
-    scopes: [import.meta.env.VITE_API_SCOPE],
+    scopes: [
+        `${API_URI}/Users.Read`,
+        `${API_URI}/Users.Write`,
+        `${API_URI}/Items.Read`,
+        `${API_URI}/Items.Write`,
+        `${API_URI}/Categories.Read`,
+        `${API_URI}/Categories.Write`,
+    ],
 };
 
 export const protectedResources = {
