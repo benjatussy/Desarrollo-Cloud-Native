@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: users_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - dcn_network
+
+  api-gateway:
+    build:
+      context: ./DCNBackend-Mysql/api-gateway
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "8089:8089"
+    environment:
+      - USERS_SERVICE_URL=http://user-service:8081
+      - ITEMS_SERVICE_URL=http://item-service:8082
+      - CATEGORIES_SERVICE_URL=http://category-service:8083
+    depends_on:
+      - user-service
+      - item-service
+      - category-service
+    networks:
+      - dcn_network
+
+  user-service:
+    build:
+      context: ./DCNBackend-Mysql/user-service
+    container_name: user-service
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=users_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+    depends_on:
+      - mysql
+    networks:
+      - dcn_network
+
+  item-service:
+    build:
+      context: ./DCNBackend-Mysql/item-service
+    container_name: item-service
+    restart: always
+    ports:
+      - "8082:8082"
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=items_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+    depends_on:
+      - mysql
+    networks:
+      - dcn_network
+
+  category-service:
+    build:
+      context: ./DCNBackend-Mysql/category-service
+    container_name: category-service
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=categories_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+    depends_on:
+      - mysql
+    networks:
+      - dcn_network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - dcn_network
+
+volumes:
+  mysql_data:
+
+networks:
+  dcn_network:
+    driver: bridge
