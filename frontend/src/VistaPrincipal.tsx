@@ -41,7 +41,7 @@ import { loginRequest, apiTokenRequest } from '../authConfig.js';
 // Configuración y tipos
 // ---------------------------------------------------------------------------
 
-const API_BASE = 'http://localhost:8089';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://13.218.94.230:8089';
 
 interface CategoryResponse {
     id: number;
