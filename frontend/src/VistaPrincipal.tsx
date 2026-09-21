@@ -35,7 +35,7 @@ import {
     AuthenticatedTemplate,
     UnauthenticatedTemplate,
 } from '@azure/msal-react';
-import { loginRequest, apiTokenRequest } from '../authConfig.js';
+import { loginRequest, apiTokenRequest } from '../authConfig';
 
 // ---------------------------------------------------------------------------
 // Configuración y tipos
