@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.3</version>
+		<version>3.5.16</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.shopping-list</groupId>
@@ -15,7 +15,8 @@
 	<description>Categories microservice for Shopping List</description>
 
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
+		<lombok.version>1.18.48</lombok.version>
 	</properties>
 
 	<dependencies>
@@ -54,6 +55,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
 			<optional>true</optional>
 		</dependency>
 
@@ -79,10 +81,11 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- BOM de Spring Cloud Azure (línea compatible con Spring Boot 3.5.x) -->
 			<dependency>
 				<groupId>com.azure.spring</groupId>
 				<artifactId>spring-cloud-azure-dependencies</artifactId>
-				<version>5.23.0</version>
+				<version>6.2.0</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -91,6 +94,19 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

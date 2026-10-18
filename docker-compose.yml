@@ -39,7 +39,29 @@ services:
       - rabbitmq_cluster
     depends_on:
       - rabbitmq-1
-
+      
+  rabbit-service:
+    build:
+      context: ./DCNBackend-Mysql/version1
+    container_name: rabbit-service
+    restart: always
+    ports:
+      - "9090:9090"
+    environment:
+      - SERVER_PORT=9090
+      - SPRING_RABBITMQ_HOST=rabbitmq-1
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=admin
+      - SPRING_RABBITMQ_PASSWORD=admin123
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/rabbit_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    depends_on:
+      - rabbitmq-1
+      - mysql
+    networks:
+      - dcn_network
+      - rabbitmq_cluster
   mysql:
     image: mysql:8
     container_name: mysql
