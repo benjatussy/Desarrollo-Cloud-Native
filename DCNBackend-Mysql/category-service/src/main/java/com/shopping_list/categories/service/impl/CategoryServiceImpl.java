@@ -8,6 +8,7 @@ import com.shopping_list.categories.exception.CategoryAlreadyExistsException;
 import com.shopping_list.categories.exception.CategoryNotFoundException;
 import com.shopping_list.categories.mapper.CategoryMapper;
 import com.shopping_list.categories.repository.CategoryRepository;
+import com.shopping_list.categories.messaging.producer.CategoryEventProducer;
 import com.shopping_list.categories.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
+    private final CategoryEventProducer categoryEventProducer;
 
     @Override
     public CategoryResponse createCategory(CreateCategoryRequest request) {
@@ -70,5 +72,6 @@ public class CategoryServiceImpl implements CategoryService {
             throw new CategoryNotFoundException(id);
         }
         categoryRepository.deleteById(id);
+        categoryEventProducer.categoryDeleted(id);
     }
 }

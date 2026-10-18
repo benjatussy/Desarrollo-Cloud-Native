@@ -8,6 +8,10 @@ import com.shopping_list.items.entity.Item;
 import com.shopping_list.items.exception.ItemNotFoundException;
 import com.shopping_list.items.mapper.ItemMapper;
 import com.shopping_list.items.repository.ItemRepository;
+import com.shopping_list.items.messaging.producer.ItemEventProducer;
+import com.shopping_list.items.messaging.event.ItemCreatedEvent;
+import com.shopping_list.items.messaging.event.ItemPurchasedEvent;
+import com.shopping_list.items.messaging.repository.DeactivatedUserRepository;
 import com.shopping_list.items.service.ItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,11 +25,17 @@ public class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemRepository;
     private final ItemMapper itemMapper;
+    private final ItemEventProducer itemEventProducer;
+    private final DeactivatedUserRepository deactivatedUserRepository;
 
     @Override
     public ItemResponse createItem(CreateItemRequest request) {
+        if (deactivatedUserRepository.existsById(request.getUserId())) {
+            throw new IllegalStateException("Cannot create items for a deactivated user");
+        }
         Item item = itemMapper.toEntity(request);
         Item savedItem = itemRepository.save(item);
+        itemEventProducer.itemCreated(new ItemCreatedEvent(savedItem.getId(), savedItem.getUserId(), savedItem.getName()));
         return itemMapper.toResponse(savedItem);
     }
 
@@ -69,6 +79,9 @@ public class ItemServiceImpl implements ItemService {
 
         item.setPurchased(request.getPurchased());
         Item updatedItem = itemRepository.save(item);
+        if (Boolean.TRUE.equals(updatedItem.getPurchased())) {
+            itemEventProducer.itemPurchased(new ItemPurchasedEvent(updatedItem.getId(), updatedItem.getUserId()));
+        }
         return itemMapper.toResponse(updatedItem);
     }
 

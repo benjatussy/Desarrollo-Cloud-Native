@@ -6,6 +6,7 @@ import com.shopping_list.users.exception.EmailAlreadyExistsException;
 import com.shopping_list.users.exception.UserNotFoundException;
 import com.shopping_list.users.mapper.UserMapper;
 import com.shopping_list.users.repository.UserRepository;
+import com.shopping_list.users.messaging.producer.UserEventProducer;
 import com.shopping_list.users.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserEventProducer userEventProducer;
 
     @Override
     @Transactional
@@ -33,6 +35,7 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         User savedUser = userRepository.save(user);
+        userEventProducer.userCreated(savedUser.getId());
         return UserMapper.toResponse(savedUser);
     }
 
@@ -80,9 +83,15 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
+        boolean wasActive = Boolean.TRUE.equals(user.getActive());
         user.setActive(request.getActive());
 
         User updatedUser = userRepository.save(user);
+        if (wasActive && Boolean.FALSE.equals(updatedUser.getActive())) {
+            userEventProducer.userDeactivated(updatedUser.getId());
+        } else if (!wasActive && Boolean.TRUE.equals(updatedUser.getActive())) {
+            userEventProducer.userCreated(updatedUser.getId());
+        }
         return UserMapper.toResponse(updatedUser);
     }
 
@@ -93,5 +102,6 @@ public class UserServiceImpl implements UserService {
             throw new UserNotFoundException(id);
         }
         userRepository.deleteById(id);
+        userEventProducer.userDeleted(id);
     }
 }

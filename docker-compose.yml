@@ -105,8 +105,13 @@ services:
       - DB_NAME=users_db
       - DB_USERNAME=root
       - DB_PASSWORD=root
+      - SPRING_RABBITMQ_HOST=rabbitmq-1
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=admin
+      - SPRING_RABBITMQ_PASSWORD=admin123
     depends_on:
       - mysql
+      - rabbitmq-1
     networks:
       - dcn_network
 
@@ -123,8 +128,13 @@ services:
       - DB_NAME=items_db
       - DB_USERNAME=root
       - DB_PASSWORD=root
+      - SPRING_RABBITMQ_HOST=rabbitmq-1
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=admin
+      - SPRING_RABBITMQ_PASSWORD=admin123
     depends_on:
       - mysql
+      - rabbitmq-1
     networks:
       - dcn_network
 
@@ -141,8 +151,13 @@ services:
       - DB_NAME=categories_db
       - DB_USERNAME=root
       - DB_PASSWORD=root
+      - SPRING_RABBITMQ_HOST=rabbitmq-1
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=admin
+      - SPRING_RABBITMQ_PASSWORD=admin123
     depends_on:
       - mysql
+      - rabbitmq-1
     networks:
       - dcn_network
 
