@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.rabbitmq.version1.service.RabbitResourceManager;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/rabbitmq")
 @RequiredArgsConstructor
@@ -63,5 +65,17 @@ public class RabbitMQController {
     public ResponseEntity<String> purgeQueue(@PathVariable String queueName) {
         resourceManager.purgeQueue(queueName);
         return ResponseEntity.ok("Cola '" + queueName + "' purgada");
+    }
+
+    @DeleteMapping("/exchanges/{exchangeName}")
+    public ResponseEntity<String> deleteExchange(@PathVariable String exchangeName) {
+        resourceManager.deleteExchange(exchangeName);
+        return ResponseEntity.ok("Exchange '" + exchangeName + "' eliminado");
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> healthCheck() {
+        Map<String, Object> health = resourceManager.getConnectionHealth();
+        return ResponseEntity.ok(health);
     }
 }

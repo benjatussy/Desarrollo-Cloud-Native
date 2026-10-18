@@ -10,7 +10,11 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.QueueInformation;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -18,6 +22,7 @@ import org.springframework.stereotype.Service;
 public class RabbitResourceManager {
 
     private final RabbitAdmin rabbitAdmin;
+    private final ConnectionFactory connectionFactory;
 
     public void createQueue(String queueName) {
         try {
@@ -92,5 +97,20 @@ public class RabbitResourceManager {
         } catch (Exception e) {
             log.error("Error al purgar cola {}: {}", queueName, e.getMessage());
         }
+    }
+
+    public Map<String, Object> getConnectionHealth() {
+        Map<String, Object> health = new HashMap<>();
+        try {
+            connectionFactory.createConnection().isOpen();
+            health.put("status", "UP");
+            health.put("host", connectionFactory.getHost());
+            health.put("port", connectionFactory.getPort());
+            health.put("virtualHost", connectionFactory.getVirtualHost());
+        } catch (Exception e) {
+            health.put("status", "DOWN");
+            health.put("error", e.getMessage());
+        }
+        return health;
     }
 }

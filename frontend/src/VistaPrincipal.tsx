@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import RabbitMQPanel from './RabbitMQPanel';
 import {
     Badge,
     Button,
@@ -904,6 +905,7 @@ export default function VistaPrincipal() {
                         { id: 'usuarios', label: 'Usuarios', content: usersPanel },
                         { id: 'items', label: 'Ítems', content: itemsPanel },
                         { id: 'categorias', label: 'Categorías', content: categoriesPanel },
+                        { id: 'rabbitmq', label: '🐇 RabbitMQ', content: <RabbitMQPanel /> },
                     ]}
                 />
             </Flex>
