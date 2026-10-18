@@ -6,7 +6,6 @@ import com.shopping_list.users.entity.User;
 public class UserMapper {
 
     private UserMapper() {
-        // Utility class — prevent instantiation
     }
 
     public static UserResponse toResponse(User user) {

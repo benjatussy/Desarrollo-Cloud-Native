@@ -31,10 +31,6 @@ import {
 import { useMsal } from '@azure/msal-react';
 import { apiTokenRequest } from '../authConfig';
 
-// ---------------------------------------------------------------------------
-// Configuración y tipos
-// ---------------------------------------------------------------------------
-
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://13.218.94.230:8089';
 
 interface CategoryResponse {
@@ -70,7 +66,6 @@ async function getAccessToken(instance: any, account: any): Promise<string> {
         });
         return result.accessToken;
     } catch {
-        // si el token silencioso falla (ej. expiró la sesión), reintenta con redirect
         await instance.acquireTokenRedirect(apiTokenRequest);
         throw new Error('Redirigiendo para renovar sesión...');
     }
@@ -101,7 +96,6 @@ async function apiRequest<T>(
             const body = await res.json();
             message = body?.message || body?.error || message;
         } catch {
-            // sin cuerpo JSON, se mantiene el mensaje por defecto
         }
         throw new Error(message);
     }
@@ -158,10 +152,6 @@ function formatDate(iso: string): string {
 function formatPrice(value: number): string {
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'USD' }).format(value);
 }
-
-// ---------------------------------------------------------------------------
-// Bloques reutilizables
-// ---------------------------------------------------------------------------
 
 function PanelHeader({
     title,
@@ -268,10 +258,6 @@ function DataTable<T>({
         </Box>
     );
 }
-
-// ---------------------------------------------------------------------------
-// Formularios (usados dentro del Modal)
-// ---------------------------------------------------------------------------
 
 function UserForm({
     initial,
@@ -470,10 +456,6 @@ function ItemForm({
     );
 }
 
-// ---------------------------------------------------------------------------
-// Componente principal
-// ---------------------------------------------------------------------------
-
 type ModalState =
     | { kind: 'closed' }
     | { kind: 'user'; data?: UserResponse }
@@ -580,7 +562,6 @@ export default function VistaPrincipal() {
         [items, itemSearch],
     );
 
-    // --- Usuarios --------------------------------------------------------
     const handleUserSubmit = async (values: { name: string; email: string; password?: string }) => {
         setSubmitting(true);
         try {
@@ -630,7 +611,6 @@ export default function VistaPrincipal() {
         }
     };
 
-    // --- Categorías --------------------------------------------------------
     const handleCategorySubmit = async (values: { name: string; description?: string }) => {
         setSubmitting(true);
         try {
@@ -669,7 +649,6 @@ export default function VistaPrincipal() {
         }
     };
 
-    // --- Items --------------------------------------------------------
     const handleItemSubmit = async (values: { name: string; quantity: number; price: number; userId?: number }) => {
         setSubmitting(true);
         try {
@@ -717,8 +696,6 @@ export default function VistaPrincipal() {
             toast.push({ title: 'No se pudo eliminar el ítem', description: e.message, variant: 'danger' });
         }
     };
-
-    // --- Paneles --------------------------------------------------------
 
     const usersPanel = (
         <Flex direction="column" gap="md">

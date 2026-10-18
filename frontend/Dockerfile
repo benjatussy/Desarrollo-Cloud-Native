@@ -1,7 +1,6 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-# Include local tarballs if any (from package.json)
 COPY agnostos-*.tgz ./
 RUN npm install
 COPY . .

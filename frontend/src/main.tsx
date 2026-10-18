@@ -15,7 +15,6 @@ import { msalConfig, loginRequest } from '../authConfig';
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
-// Inicializar MSAL antes de montar la aplicación
 await msalInstance.initialize();
 
 const accounts = msalInstance.getAllAccounts();
@@ -35,8 +34,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const [loggedOut, setLoggedOut] = useState(() => sessionStorage.getItem('msal_logged_out') === 'true');
 
   useEffect(() => {
-    // Si no está autenticado, no hay interacción en progreso y no se cerró sesión explícitamente:
-    // Redirigir inmediatamente al login de Microsoft Entra ID
     if (!isAuthenticated && inProgress === 'none' && !loggedOut) {
       instance.loginRedirect(loginRequest);
     }
@@ -72,7 +69,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Mientras se valida la sesión o se redirige al login de Microsoft
   return (
     <Flex direction="column" align="center" justify="center" gap="md" style={{ minHeight: '100vh' }}>
       <ProgressCircle size={48} />

@@ -42,7 +42,6 @@ function slide(title,n) {
   return s;
 }
 
-// 1 Portada
 {
  const s=pres.slides.add(); s.background.fill=C.navy; rect(s,0,0,17,720,C.cyan,C.cyan,0);
  txt(s,"DSY1107  ·  PROYECTO DE ARQUITECTURA",82,125,660,32,{size:18,bold:true,color:C.cyan});
@@ -51,11 +50,10 @@ function slide(title,n) {
  rect(s,84,432,170,3,C.cyan,C.cyan,0);
  txt(s,"Presentan",84,466,180,28,{size:17,bold:true,color:"#A9C4D0"});
  txt(s,"Tu nombre  ·  Javier",84,500,580,43,{size:26,bold:true,color:C.white});
- txt(s,"Identidad, API, microservicios y mensajería",84,638,780,30,{size:17,color:"#A9C4D0"});
- s.speakerNotes.text="Presentamos Pedidos360, una plataforma de pedidos desplegada con servicios cloud-native. En tres minutos recorreremos la arquitectura, el inicio de sesión con Entra ID, la protección de API Gateway, el despliegue en Docker y la mensajería RabbitMQ.";
+ txt(s,"Exposición técnica · 5–10 min · identidad, API, microservicios y mensajería",84,638,1050,30,{size:17,color:"#A9C4D0"});
+ s.speakerNotes.text="Duración sugerida: 5 a 10 minutos; esta pauta cabe en unos 7 minutos más preguntas. Presentamos Pedidos360 y explicamos cómo se autentica el usuario, cómo se protegen los endpoints y cómo RabbitMQ procesa eventos con colas de mensajes y DLQ. La evaluación es individual: cada estudiante debe fundamentar las decisiones y mostrar evidencia en la nube.";
 }
 
-// 2 Arquitectura general en un diagrama editable
 {
  const s=slide("Arquitectura general",2);
  const fe=box(s,"Frontend","React · Nginx · EC2",55,170,205,94,C.blue);
@@ -76,10 +74,9 @@ function slide(title,n) {
  link(s,group,mq,C.navy,"elbow","bottom","top"); link(s,admin,mq,C.blue,"straight","left","right");
  txt(s,"REST",265,183,68,25,{size:15,bold:true,color:C.teal,align:"center"});
  txt(s,"eventos",547,476,120,25,{size:15,bold:true,color:C.navy,align:"center"});
- s.speakerNotes.text="El frontend React se sirve desde Nginx en EC2. Los usuarios se autentican en Microsoft Entra ID y la aplicación envía solicitudes al API Gateway de AWS. El gateway valida el JWT y distribuye las rutas a los tres servicios Spring Boot. Cada servicio persiste en MariaDB. RabbitMQ conecta los servicios de forma asíncrona, y rabbit-service administra los recursos del broker.";
+ s.speakerNotes.text="(45 s) Mostrar en AWS la instancia y confirmar que frontend y backend están activos e integrados. El frontend React se sirve desde Nginx en EC2. El usuario inicia sesión en Entra ID; luego el API Gateway valida el JWT y distribuye las rutas a user-service, item-service y category-service. Los servicios persisten en la base relacional y usan RabbitMQ para eventos asíncronos. El servicio administrador opera sobre el broker.";
 }
 
-// 3 Identidad
 {
  const s=slide("Identidad y tenant de Entra ID",3);
  txt(s,"Tenant Microsoft Entra ID del proyecto",72,137,780,35,{size:25,bold:true,color:C.navy});
@@ -94,10 +91,9 @@ function slide(title,n) {
  rect(s,72,525,8,76,C.orange,C.orange,0);
  txt(s,"HTTPS en Nginx",100,526,250,31,{size:21,bold:true,color:C.navy});
  txt(s,"Certificado TLS y contexto seguro para MSAL/PKCE.",100,562,1050,44,{size:19,color:C.muted});
- s.speakerNotes.text="En Entra ID se registra la aplicación de una sola página y se configuran los URI de retorno. MSAL inicia el flujo OpenID Connect con Authorization Code y PKCE. La aplicación solicita permisos delimitados por scopes, por ejemplo lectura y escritura de usuarios, ítems y categorías. El usuario recibe un JWT para llamar a la API. En el sitio desplegado se usa HTTPS en Nginx, porque el navegador requiere un contexto seguro para las capacidades criptográficas del flujo.";
+ s.speakerNotes.text="(50 s) En el portal de Entra ID mostrar el tenant, la aplicación registrada y al menos un usuario registrado. Explicar el flujo OAuth 2.0 / OpenID Connect Authorization Code con PKCE a través de MSAL: el usuario inicia sesión, MSAL obtiene un token JWT con scopes de lectura y escritura y el frontend lo envía al API. HTTPS en Nginx habilita el contexto seguro que requiere el flujo en el navegador; mencionar que el certificado actual es de despliegue/prueba y que se mejoraría con uno real.";
 }
 
-// 4 API Gateway
 {
  const s=slide("AWS API Gateway y rutas",4);
  txt(s,"Una entrada HTTPS para los servicios",72,139,680,37,{size:26,bold:true,color:C.navy});
@@ -110,10 +106,9 @@ function slide(title,n) {
  rect(s,1010,375,185,62,"#E4F4EC","#B4D8C5",1.2); txt(s,"OPTIONS",1020,384,165,42,{size:21,bold:true,color:C.green,align:"center"});
  txt(s,"Sin authorizer",1010,448,185,28,{size:17,color:C.muted,align:"center"});
  txt(s,"Las demás solicitudes requieren un JWT válido.",72,602,770,30,{size:19,bold:true,color:C.muted});
- s.speakerNotes.text="AWS API Gateway recibe las solicitudes y aplica el JWT authorizer contra el emisor de Entra ID. Las rutas proxy conservan el path y envían usuarios, ítems y categorías a sus respectivos microservicios Docker. CORS limita los orígenes, métodos y encabezados permitidos. Las solicitudes OPTIONS atienden el preflight del navegador sin exigir token; las rutas funcionales sí exigen un JWT.";
+ s.speakerNotes.text="(50 s) En la consola de AWS mostrar el API Gateway desplegado, el JWT authorizer y las rutas /users/{proxy+}, /items/{proxy+} y /categories/{proxy+}. CORS define orígenes, métodos y headers; OPTIONS está sin authorizer para el preflight. Probar una ruta protegida sin token y mostrar 401, luego repetirla con token emitido por Entra ID y mostrar una respuesta exitosa. Aclarar que API Gateway enruta al backend, no reemplaza la lógica de negocio.";
 }
 
-// 5 Docker
 {
  const s=slide("Docker y publicación de imágenes",5);
  txt(s,"Build multi-stage",72,143,330,38,{size:25,bold:true,color:C.navy});
@@ -126,28 +121,26 @@ function slide(title,n) {
  link(s,b2,hub,C.blue,"elbow","right","left"); link(s,f2,hub,C.orange,"elbow","right","left"); link(s,hub,ec2,C.teal,"straight","bottom","top");
  txt(s,"docker run -d --restart unless-stopped",72,561,735,42,{size:24,bold:true,color:C.navy});
  txt(s,"Docker aplica la política de reinicio y mantiene el contenedor activo.",72,610,1080,31,{size:18,color:C.muted});
- s.speakerNotes.text="Las imágenes separan compilación y ejecución. Los servicios Java se compilan con JDK y Maven, y corren con JRE y el JAR generado. El frontend se construye con Node y Vite, y Nginx sirve los archivos estáticos. Las imágenes se publican en Docker Hub y EC2 las ejecuta. Para mantenerlas activas después de reinicios se usa la política de Docker --restart unless-stopped; la política de reinicio pertenece al daemon de Docker.";
+ s.speakerNotes.text="(40 s) Mostrar en Docker Hub las imágenes y en EC2 los contenedores activos. Las imágenes usan build multi-stage: Java se compila con JDK/Maven y ejecuta el JAR en JRE; React/Vite genera estáticos servidos por Nginx. Se ejecutan con Docker y --restart unless-stopped para recuperarse de reinicios del host. Esta es una política del daemon Docker, no una unidad systemd.";
 }
 
-// 6 RabbitMQ
 {
  const s=slide("RabbitMQ: eventos y administración",6);
- txt(s,"Clúster de 2 nodos en docker-compose",72,137,980,36,{size:25,bold:true,color:C.navy});
- const topic=box(s,"shopping.events","Exchange topic",72,233,230,100,C.teal,23,19);
- const q1=box(s,"Cola de usuarios","durable",386,168,230,72,C.blue,20,16), q2=box(s,"Cola de ítems","durable",386,267,230,72,C.orange,20,16), q3=box(s,"Cola de categorías","durable",386,366,230,72,C.navy,20,16);
- const dlx=box(s,"shopping.dlx","Exchange direct",714,265,205,100,C.red,22,18);
- const d1=box(s,"DLQ usuarios","",1000,168,205,72,C.red,19,15), d2=box(s,"DLQ ítems","",1000,267,205,72,C.red,19,15), d3=box(s,"DLQ categorías","",1000,366,205,72,C.red,19,15);
- link(s,topic,q1,C.teal,"elbow","right","left"); link(s,topic,q2,C.teal,"straight","right","left"); link(s,topic,q3,C.teal,"elbow","right","left");
- link(s,q1,dlx,C.red,"elbow","right","left"); link(s,q2,dlx,C.red,"straight","right","left"); link(s,q3,dlx,C.red,"elbow","right","left");
- link(s,dlx,d1,C.red,"elbow","right","left"); link(s,dlx,d2,C.red,"straight","right","left"); link(s,dlx,d3,C.red,"elbow","right","left");
- txt(s,"Cada cola tiene su DLQ",388,455,375,27,{size:17,bold:true,color:C.red,align:"center"});
- txt(s,"rabbitmq-1",72,512,205,40,{size:21,bold:true,color:C.navy,align:"center"}); rect(s,277,518,1,29,C.line,C.line,0); txt(s,"rabbitmq-2",286,512,205,40,{size:21,bold:true,color:C.navy,align:"center"});
- box(s,"rabbit-service","Crear y eliminar colas,\nexchanges y bindings",714,500,491,92,C.blue,21,17);
- txt(s,"Reintentos agotados: DLQ y registro ERROR",72,605,800,31,{size:18,color:C.muted});
- s.speakerNotes.text="RabbitMQ corre como un clúster de dos nodos definido en docker-compose. Los productores publican en el exchange topic shopping.events, que enruta a tres colas durables por clave. Si un consumidor falla tras los reintentos, el broker usa shopping.dlx, de tipo direct, para enviar el mensaje a la DLQ correspondiente. rabbit-service ofrece administración de colas, exchanges y bindings.";
+ txt(s,"Clúster de 2 nodos en docker-compose",72,117,980,27,{size:20,bold:true,color:C.navy});
+ const topic=box(s,"shopping.events","Exchange topic",48,246,220,100,C.teal,22,18);
+ const q1=box(s,"items.user-events.queue","user.*",326,151,292,60,C.blue,18,14), q2=box(s,"categories.item-events.queue","item.created",326,225,292,60,C.orange,17,14), q3=box(s,"users.item-events.queue","item.purchased",326,299,292,60,C.navy,18,14), q4=box(s,"items.category-events.queue","category.deleted",326,373,292,60,C.teal,17,14);
+ const dlx=box(s,"shopping.dlx","Exchange direct",692,254,190,86,C.red,21,17);
+ const d1=box(s,"items.user-events.dlq","DLQ",946,151,264,60,C.red,18,14), d2=box(s,"categories.item-events.dlq","DLQ",946,225,264,60,C.red,17,14), d3=box(s,"users.item-events.dlq","DLQ",946,299,264,60,C.red,18,14), d4=box(s,"items.category-events.dlq","DLQ",946,373,264,60,C.red,17,14);
+ for(const q of [q1,q2,q3,q4]) link(s,topic,q,C.teal,"elbow","right","left");
+ for(const q of [q1,q2,q3,q4]) link(s,q,dlx,C.red,"elbow","right","left");
+ for(const d of [d1,d2,d3,d4]) link(s,dlx,d,C.red,"elbow","right","left");
+ txt(s,"4 colas declaradas en el código (la pauta solicita demostrar al menos 3)",75,447,1130,25,{size:16,bold:true,color:C.red,align:"center"});
+ txt(s,"2 nodos RabbitMQ en docker-compose",60,504,430,35,{size:20,bold:true,color:C.navy});
+ box(s,"API administradora RabbitMQ","REST para administrar colas,\nexchanges y bindings",692,492,518,75,C.blue,20,16);
+ txt(s,"@RabbitListener · reintentos ×3 · errores → DLQ",60,577,560,30,{size:17,color:C.muted});
+ s.speakerNotes.text="(90 s) Mostrar docker-compose levantando los dos nodos y abrir la consola de RabbitMQ. El código declara el exchange topic shopping.events, el direct shopping.dlx, cuatro colas durables de eventos y sus cuatro DLQ; esto supera las tres colas requeridas por la pauta, así que señalar tres ejemplos visibles y aclarar que hay una cuarta ruta. Cada consumidor está implementado con @RabbitListener y agrupado en paquetes messaging/consumer. application.properties configura tres intentos (intervalo inicial 2 s, multiplicador 2) y default-requeue-rejected=false, de modo que un error no reencola indefinidamente y el argumento dead-letter envía a DLQ. Mostrar un mensaje encolado o la prueba controlada de error y el conteo de la DLQ. La configuración está separada en RabbitConfig, aunque los nombres de cola todavía están escritos directamente allí; como mejora, centralizarlos todos en propiedades. La pauta pide una API admin REST: mostrar las operaciones existentes de crear/eliminar y bindings; revisar y mencionar honestamente validaciones de entradas. En el repositorio la API admin está en version1, así que confirmar cuál artefacto se despliega antes de la exposición.";
 }
 
-// 7 Seguridad
 {
  const s=slide("Seguridad y despliegue en AWS",7);
  txt(s,"EC2 pública",72,151,315,43,{size:28,bold:true,color:C.navy});
@@ -160,18 +153,17 @@ function slide(title,n) {
  rect(s,650,282,220,118,"#FBE9E8","#E6B9B6",1.5); txt(s,"401",670,294,180,56,{size:42,bold:true,color:C.red,align:"center"}); txt(s,"Sin token",670,350,180,33,{size:18,align:"center"});
  rect(s,920,282,220,118,"#E4F4EC","#B4D8C5",1.5); txt(s,"200",940,294,180,56,{size:42,bold:true,color:C.green,align:"center"}); txt(s,"Con JWT válido",940,350,180,33,{size:18,align:"center"});
  txt(s,"Entra ID emite el token y API Gateway valida issuer, audiencia y firma.",650,455,500,84,{size:20,color:C.muted});
- s.speakerNotes.text="El despliegue publica la aplicación en EC2 con Elastic IP y reglas de Security Group que limitan los puertos accesibles. Nginx sirve el frontend por HTTPS. API Gateway valida el JWT emitido por Entra ID. La prueba de seguridad esperada devuelve 401 cuando la solicitud no incluye token y 200 cuando incluye un token válido para la API.";
+ s.speakerNotes.text="(45 s) En AWS enseñar Elastic IP, reglas del Security Group, instancias y servicios activos. Desde la consola, navegador o Postman, ejecutar la misma llamada al endpoint protegido primero sin credencial (401) y después con el JWT de Entra ID (respuesta 2xx). Explicar que el frontend obtiene el token mediante MSAL y que API Gateway comprueba issuer y audience antes de enviar la solicitud al servicio.";
 }
 
-// 8 Conclusión
 {
  const s=slide("Conclusión y próximos pasos",8);
  txt(s,"Logrado",72,155,360,40,{size:27,bold:true,color:C.teal});
  txt(s,"OIDC con MSAL y PKCE\nJWT authorizer para la API\nServicios Docker conectados a MariaDB\nEventos RabbitMQ con DLQ",72,218,530,255,{size:22,valign:"top"});
  rect(s,652,151,2,414,C.line,C.line,0); txt(s,"Mejoras siguientes",704,155,440,40,{size:27,bold:true,color:C.orange});
- txt(s,"Certificado HTTPS real y renovación automática\n\nSecretos en AWS Secrets Manager o Parameter Store\n\nMás nodos RabbitMQ y pruebas de tolerancia a fallos",704,218,490,270,{size:22,valign:"top"});
- txt(s,"Pedidos360 integra identidad, servicios y operación en una sola solución.",72,603,1125,42,{size:23,bold:true,color:C.navy});
- s.speakerNotes.text="Pedidos360 reúne autenticación centralizada, rutas protegidas, tres microservicios y mensajería asíncrona en una arquitectura desplegable en AWS. Los siguientes pasos son usar un certificado de producción con renovación automática, mover las credenciales fuera del código y probar mayor tolerancia a fallos con más nodos RabbitMQ. Gracias.";
+ txt(s,"Centralizar nombres de colas y bindings\n\nValidar entradas y explicitar ACK/NACK\n\nCertificado TLS real y secretos administrados\n\nMás nodos RabbitMQ y pruebas de fallo",704,218,490,300,{size:21,valign:"top"});
+ txt(s,"Demo: tenant y usuario · API Gateway · 401/2xx · 2 nodos · 3 DLQ",72,574,1125,33,{size:18,bold:true,color:C.navy});
+ s.speakerNotes.text="(35 s) Cerrar resumiendo la identidad con Entra ID, los endpoints protegidos y el procesamiento asíncrono con RabbitMQ. Para completar la demostración según la pauta, confirmar que se mostró: tenant y usuario, API Gateway y rutas, llamada del frontend con token, respuesta 401/2xx, frontend/backend activos en la nube, dos nodos, tres colas con DLQ, exchanges topic y direct y docker-compose. Como siguientes mejoras, centralizar nombres de colas y bindings en configuración, validar mejor los parámetros del administrador, usar certificado HTTPS real, guardar secretos fuera del código y probar más nodos. Duración estimada de esta secuencia: aproximadamente 7 minutos, ajustable a 5–10 minutos más preguntas.";
 }
 
 await fs.mkdir(buildDir,{recursive:true}); await fs.mkdir(outputDir,{recursive:true});

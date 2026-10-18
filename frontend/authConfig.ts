@@ -10,12 +10,10 @@ export const msalConfig = {
     },
 };
 
-// Scopes solo para autenticar al usuario (login)
 export const loginRequest = {
     scopes: ['openid', 'profile'],
 };
 
-// Scopes para obtener el token que el API Gateway va a validar
 const API_URI = 'api://482ff19e-3fc5-43ec-8a5e-31ec71c950d3';
 
 export const apiTokenRequest = {

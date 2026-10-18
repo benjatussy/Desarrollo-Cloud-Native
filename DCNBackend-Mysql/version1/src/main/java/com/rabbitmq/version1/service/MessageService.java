@@ -17,13 +17,11 @@ public class MessageService {
     public void sendMessage(MessageRequest request) {
         try {
             if (request.getExchange() != null && !request.getExchange().isBlank()) {
-                // Enviar a un exchange con routing key
                 String routingKey = request.getRoutingKey() != null ? request.getRoutingKey() : "";
                 rabbitTemplate.convertAndSend(request.getExchange(), routingKey, request.getMessage());
                 log.info("Mensaje enviado al exchange '{}' con routing key '{}': {}",
                         request.getExchange(), routingKey, request.getMessage());
             } else if (request.getQueueName() != null && !request.getQueueName().isBlank()) {
-                // Enviar directamente a una cola (usa el exchange por defecto "")
                 rabbitTemplate.convertAndSend("", request.getQueueName(), request.getMessage());
                 log.info("Mensaje enviado a la cola '{}': {}", request.getQueueName(), request.getMessage());
             } else {
