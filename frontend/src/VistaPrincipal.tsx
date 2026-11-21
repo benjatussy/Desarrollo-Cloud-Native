@@ -26,6 +26,9 @@ import {
     RefreshCw,
     Inbox,
     AlertTriangle,
+    Activity,
+    Database,
+    Server,
 } from 'lucide-react';
 
 import { useMsal } from '@azure/msal-react';
@@ -133,6 +136,43 @@ const CategoriesApi = {
     update: (token: string, id: number, data: { name: string; description?: string }) =>
         apiRequest<CategoryResponse>(`/categories/${id}`, token, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (token: string, id: number) => apiRequest<void>(`/categories/${id}`, token, { method: 'DELETE' }),
+};
+
+interface HourlyKafkaMetric {
+    id?: number;
+    windowStart: string;
+    totalPurchases: number;
+    activeShards: number;
+}
+
+interface KafkaSummary {
+    total_events?: number;
+    total_windows?: number;
+}
+
+const KafkaMetricsApi = {
+    getHourly: async (token?: string): Promise<HourlyKafkaMetric[]> => {
+        try {
+            const res = await fetch(`${API_BASE}/api/kafka/metrics/hourly`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!res.ok) return [];
+            return await res.json();
+        } catch {
+            return [];
+        }
+    },
+    getSummary: async (token?: string): Promise<KafkaSummary> => {
+        try {
+            const res = await fetch(`${API_BASE}/api/kafka/metrics/summary`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!res.ok) return { total_events: 0, total_windows: 0 };
+            return await res.json();
+        } catch {
+            return { total_events: 0, total_windows: 0 };
+        }
+    },
 };
 
 function formatDate(iso: string): string {
@@ -493,6 +533,10 @@ export default function VistaPrincipal() {
     const [modal, setModal] = useState<ModalState>({ kind: 'closed' });
     const [submitting, setSubmitting] = useState(false);
 
+    const [kafkaMetrics, setKafkaMetrics] = useState<HourlyKafkaMetric[]>([]);
+    const [kafkaSummary, setKafkaSummary] = useState<KafkaSummary>({ total_events: 0, total_windows: 0 });
+    const [kafkaLoading, setKafkaLoading] = useState(false);
+
     const loadUsers = useCallback(async () => {
         setUsersLoading(true);
         setUsersError(null);
@@ -532,13 +576,38 @@ export default function VistaPrincipal() {
         }
     }, [instance, accounts]);
 
+    const loadKafkaMetrics = useCallback(async () => {
+        setKafkaLoading(true);
+        try {
+            let token: string | undefined;
+            if (accounts.length > 0) {
+                try {
+                    token = await getAccessToken(instance, accounts[0]);
+                } catch {
+                    // ruta permitAll si falla silent
+                }
+            }
+            const [hourly, summary] = await Promise.all([
+                KafkaMetricsApi.getHourly(token),
+                KafkaMetricsApi.getSummary(token),
+            ]);
+            setKafkaMetrics(hourly);
+            setKafkaSummary(summary);
+        } catch {
+            // Ignorar errores de carga inicial
+        } finally {
+            setKafkaLoading(false);
+        }
+    }, [instance, accounts]);
+
     useEffect(() => {
         if (accounts.length > 0) {
             loadUsers();
             loadCategories();
             loadItems();
+            loadKafkaMetrics();
         }
-    }, [loadUsers, loadCategories, loadItems, accounts]);
+    }, [loadUsers, loadCategories, loadItems, loadKafkaMetrics, accounts]);
 
     const usersById = useMemo(() => new Map(users.map((u) => [u.id, u])), [users]);
 
@@ -674,6 +743,7 @@ export default function VistaPrincipal() {
             const token = await getAccessToken(instance, accounts[0]);
             await ItemsApi.setPurchased(token, item.id, !item.purchased);
             await loadItems();
+            loadKafkaMetrics();
         } catch (e: any) {
             toast.push({ title: 'No se pudo actualizar el ítem', description: e.message, variant: 'danger' });
         }
@@ -854,6 +924,116 @@ export default function VistaPrincipal() {
         </Flex>
     );
 
+    const kafkaMetricsPanel = (
+        <Flex direction="column" gap="md">
+            <Flex direction={{ xs: 'column', md: 'row' }} justify="between" align={{ md: 'center' }} gap="sm">
+                <Box>
+                    <Text variant="h3" weight="semibold">Métricas y Streaming Kafka</Text>
+                    <Text variant="small" color="muted">
+                        Pipeline en tiempo real con Apache Kafka KRaft (3 brokers), Kafka Streams & DLT
+                    </Text>
+                </Box>
+                <Tooltip content="Recargar métricas de streaming">
+                    <Button variant="ghost" size="sm" icon={RefreshCw} onClick={loadKafkaMetrics} disabled={kafkaLoading} aria-label="Recargar métricas">
+                        Actualizar
+                    </Button>
+                </Tooltip>
+            </Flex>
+
+            {/* Tarjetas de Arquitectura e Infraestructura */}
+            <Flex direction={{ xs: 'column', md: 'row' }} gap="md">
+                <Box variant="default" shadow="xs" padding="md" style={{ flex: 1, borderRadius: 12, border: '1px solid rgba(128,128,128,0.15)' }}>
+                    <Flex direction="column" gap="xs">
+                        <Flex align="center" justify="between">
+                            <Flex align="center" gap="xs">
+                                <Server size={18} />
+                                <Text variant="body" weight="semibold">Cluster Kafka (KRaft)</Text>
+                            </Flex>
+                            <Badge variant="success" dot>3 Brokers</Badge>
+                        </Flex>
+                        <Text variant="caption" color="muted">kafka-1, kafka-2, kafka-3 en quórum KRaft</Text>
+                        <Text variant="small" weight="medium">Sin dependencia de ZooKeeper</Text>
+                    </Flex>
+                </Box>
+
+                <Box variant="default" shadow="xs" padding="md" style={{ flex: 1, borderRadius: 12, border: '1px solid rgba(128,128,128,0.15)' }}>
+                    <Flex direction="column" gap="xs">
+                        <Flex align="center" justify="between">
+                            <Flex align="center" gap="xs">
+                                <Activity size={18} />
+                                <Text variant="body" weight="semibold">Tópicos & Resiliencia</Text>
+                            </Flex>
+                            <Badge variant="primary">Particiones: 3</Badge>
+                        </Flex>
+                        <Text variant="caption" color="muted">shopping-activity-events → metrics</Text>
+                        <Text variant="small" weight="medium">Dead Letter Topic (.DLT) activo</Text>
+                    </Flex>
+                </Box>
+
+                <Box variant="default" shadow="xs" padding="md" style={{ flex: 1, borderRadius: 12, border: '1px solid rgba(128,128,128,0.15)' }}>
+                    <Flex direction="column" gap="xs">
+                        <Flex align="center" justify="between">
+                            <Flex align="center" gap="xs">
+                                <Database size={18} />
+                                <Text variant="body" weight="semibold">Kafka Streams Engine</Text>
+                            </Flex>
+                            <Badge variant="success">Ventana 1h</Badge>
+                        </Flex>
+                        <Text variant="caption" color="muted">ID: shopping-activity-streams-v1</Text>
+                        <Text variant="small" weight="medium">Total eventos: {kafkaSummary.total_events ?? 0}</Text>
+                    </Flex>
+                </Box>
+            </Flex>
+
+            {/* Tabla de agregaciones por hora */}
+            {kafkaLoading ? (
+                <ListSkeleton />
+            ) : kafkaMetrics.length === 0 ? (
+                <EmptyState
+                    icon={Activity}
+                    title="Aún no hay ventanas horarias calculadas"
+                    description="Marca ítems como comprados en la pestaña 'Ítems' para emitir eventos al tópico shopping-activity-events. Kafka Streams los procesará por ventana temporal."
+                    action={<Button variant="secondary" icon={RefreshCw} onClick={loadKafkaMetrics}>Comprobar ahora</Button>}
+                />
+            ) : (
+                <DataTable
+                    columns={[
+                        {
+                            key: 'windowStart',
+                            header: 'Ventana Horaria (1 Hora)',
+                            render: (m: HourlyKafkaMetric) => formatDate(m.windowStart),
+                        },
+                        {
+                            key: 'totalPurchases',
+                            header: 'Compras Agregadas (Streams)',
+                            align: 'center',
+                            render: (m: HourlyKafkaMetric) => (
+                                <Badge variant="primary">{m.totalPurchases} {m.totalPurchases === 1 ? 'compra' : 'compras'}</Badge>
+                            ),
+                        },
+                        {
+                            key: 'activeShards',
+                            header: 'Shards de Procesamiento',
+                            align: 'center',
+                            render: (m: HourlyKafkaMetric) => (
+                                <Text variant="small">{m.activeShards} {m.activeShards === 1 ? 'partición' : 'particiones'}</Text>
+                            ),
+                        },
+                        {
+                            key: 'status',
+                            header: 'Garantía de Entrega',
+                            align: 'right',
+                            render: () => (
+                                <Badge variant="success" dot>Consistente (acks=all)</Badge>
+                            ),
+                        },
+                    ]}
+                    rows={kafkaMetrics}
+                />
+            )}
+        </Flex>
+    );
+
     return (
         <Box padding="lg" style={{ maxWidth: 1200, margin: '0 auto' }}>
             <Flex direction="column" gap="lg">
@@ -881,6 +1061,7 @@ export default function VistaPrincipal() {
                         { id: 'usuarios', label: 'Usuarios', content: usersPanel },
                         { id: 'items', label: 'Ítems', content: itemsPanel },
                         { id: 'categorias', label: 'Categorías', content: categoriesPanel },
+                        { id: 'kafka-metrics', label: 'Métricas Kafka', content: kafkaMetricsPanel },
                     ]}
                 />
             </Flex>

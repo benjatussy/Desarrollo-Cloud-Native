@@ -47,6 +47,15 @@ public class RabbitMQController {
                 .body("Binding creado: " + queueName + " <-> " + exchangeName);
     }
 
+    @DeleteMapping("/bindings")
+    public ResponseEntity<Void> deleteBinding(
+            @RequestParam String queueName,
+            @RequestParam String exchangeName,
+            @RequestParam String routingKey) {
+        resourceManager.deleteBinding(queueName, exchangeName, routingKey);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/queues/{queueName}")
     public ResponseEntity<QueueInformation> getQueueInfo(@PathVariable String queueName) {
         QueueInformation info = resourceManager.getQueueInfo(queueName);
