@@ -57,6 +57,15 @@ public class RabbitResourceManager {
         }
     }
 
+    public void deleteBinding(String queueName, String exchangeName, String routingKey) {
+        Binding binding = BindingBuilder
+                .bind(new Queue(queueName))
+                .to(new DirectExchange(exchangeName))
+                .with(routingKey);
+        rabbitAdmin.removeBinding(binding);
+        log.info("Binding eliminado: {} -> {} con routing key {}", queueName, exchangeName, routingKey);
+    }
+
     public QueueInformation getQueueInfo(String queueName) {
         try {
             QueueInformation info = rabbitAdmin.getQueueInfo(queueName);

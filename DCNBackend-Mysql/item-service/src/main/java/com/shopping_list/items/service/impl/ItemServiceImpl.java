@@ -9,6 +9,7 @@ import com.shopping_list.items.exception.ItemNotFoundException;
 import com.shopping_list.items.mapper.ItemMapper;
 import com.shopping_list.items.repository.ItemRepository;
 import com.shopping_list.items.messaging.producer.ItemEventProducer;
+import com.shopping_list.items.messaging.kafka.producer.ShoppingActivityProducer;
 import com.shopping_list.items.messaging.event.ItemCreatedEvent;
 import com.shopping_list.items.messaging.event.ItemPurchasedEvent;
 import com.shopping_list.items.messaging.repository.DeactivatedUserRepository;
@@ -26,6 +27,7 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final ItemMapper itemMapper;
     private final ItemEventProducer itemEventProducer;
+    private final ShoppingActivityProducer shoppingActivityProducer;
     private final DeactivatedUserRepository deactivatedUserRepository;
 
     @Override
@@ -77,10 +79,15 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new ItemNotFoundException(id));
 
+        boolean newlyPurchased = !Boolean.TRUE.equals(item.getPurchased())
+                && Boolean.TRUE.equals(request.getPurchased());
         item.setPurchased(request.getPurchased());
         Item updatedItem = itemRepository.save(item);
         if (Boolean.TRUE.equals(updatedItem.getPurchased())) {
             itemEventProducer.itemPurchased(new ItemPurchasedEvent(updatedItem.getId(), updatedItem.getUserId()));
+            if (newlyPurchased) {
+                shoppingActivityProducer.itemPurchased(updatedItem.getId(), updatedItem.getUserId());
+            }
         }
         return itemMapper.toResponse(updatedItem);
     }
