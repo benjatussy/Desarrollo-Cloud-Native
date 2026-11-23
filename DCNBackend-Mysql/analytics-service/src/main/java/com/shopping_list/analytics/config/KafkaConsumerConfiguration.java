@@ -42,6 +42,12 @@ public class KafkaConsumerConfiguration {
         return new DefaultErrorHandler(recoverer, new FixedBackOff(1_000L, 2L));
     }
 
+    @Bean
+    public NewTopic eventsTopic(
+            @Value("${app.kafka.topics.shopping-activity-events:shopping-activity-events}") String topic) {
+        return topic(topic);
+    }
+    
     private NewTopic topic(String name) {
         return TopicBuilder.name(name)
                 .partitions(TOPIC_PARTITIONS)
